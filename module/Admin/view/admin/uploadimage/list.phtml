@@ -1,0 +1,329 @@
+<?php 
+use Application\Util\Util;
+use Test\Data;
+?>
+<div id="errorDiv"></div>
+<div class="panel panel-default">
+	<div class="panel-body">
+	<?php 
+		$crumbs = $this->crumbs;
+		array_shift($crumbs);
+		$crumbNum = count ( $crumbs );
+		if($crumbNum):
+		?>
+		<ol class="breadcrumb">
+		
+			<li><a href="/uploadimage?basedir=upload&dirend=&Continue=Continue">上传图片</a></li>	
+		  	<?php
+		  	       
+		  	        foreach ( $crumbs as $k => $crumb ) {
+						if ($k != ($crumbNum - 1)) {
+							?>
+					<li><a href="/uploadimage/index?basedir=<?=$this->basedir;?>&dirend=<?=$crumb['dirend']; ?>&Continue=Continue"><?=$crumb['title'];?></a></li>
+			<?php }else{ ?>	
+					<li class="active"><?=$crumb['title'];?></li>
+			<?php }} ?>
+		  
+		</ol>
+		 <?php 
+		 endif; 
+		 ?>
+		
+	  	<form class="form-inline">
+	  		<input type="button" id="createDir" class="form-control btn btn-primary" value="新建文件夹" />  <div class="btn-group" id="hiddenForm" style="display:none;margin-top:5px">
+		    	   文件夹名 : <input type="text" size="30" id="direndInput" class="form-control" value="" name="dirend"/>&nbsp;&nbsp;&nbsp;&nbsp;<input type="button"  class="form-control btn-primary" value="创建" onclick="submitForm();"/>
+			 </div>
+		</form>
+		 
+		 <table  style="margin-top: 23px" class="table table-striped table-bordered">
+		 	 <?php 
+		
+			foreach ($this->files as $item) : 
+			$tmpdir= str_replace($this->basedir,"",$item['dirname']);
+			if ('/' == substr($tmpdir,0,1)){
+				$tmpdir = substr($tmpdir,1);
+			}
+			$dirUrl = "/uploadimage/index?basedir={$this->basedir}&dirend={$tmpdir}&Continue=Continue";
+		?>
+		
+		<tr>		
+			<td>
+			<?php 
+			$data = Data::getInstance();
+			$site = $data->get('site');
+			$folderUrl = "http://".$site['hostname']."/images/admin/i/folder.gif";
+			$imageUrl = "http://".$site['hostname']."/images/";
+			?>
+				<? if (1 == $item['filetype']): ?>
+				<img src="<?php echo $folderUrl;?>">
+				<a href="<?=$dirUrl?>"><?= $tmpdir?></a> 
+				<?php	else: ?>
+				<a target="_blank" href="<?php echo $imageUrl.$item['src'] ; ?>">	<?=$item['imagename'];?></a>
+				<?php 	endif;?>
+			</td>
+			<td><?php if ((3 == $item['filetype']) && ($item['src'])):?><?php echo Util::GetImg($item['src']); ?><?php endif;?></td>
+			<td><?php if (1 != $item['filetype']):?><?=$item['imagesize'];?><?php endif;?></td>
+			<td><?php if ((3 == $item['filetype']) && ($item['size'])):?><?=$item['size'];?><?php endif;?></td>
+			<td align="center">
+				<?php if (in_array($item['filetype'],array(2,3))):?>
+					<a class="activeLink" href="<?php echo $imageUrl.$item['src'] ;?>" target="_blank">浏览</a>&nbsp;&nbsp;<a class="deleteLink" href="/uploadimage/delete?basedir=<?=$this->basedir;?>&dirend=<?=$this->dirend;?>&filename=<?=$item['imagename'];?>">删除</a>
+				<?php else:?>
+					<!--  <a class="activeLink" href="<?=$dirUrl?>">打开文件夹</a>-->
+				<?php endif;?>
+			</td>
+		</tr>		
+		<? 
+		endforeach;?>
+		 </table>
+
+<style>
+.upload_append_list{ padding:10px 5px;}
+.upload_append_list ul{ padding:0; margin:0; list-style:none; clear:both;}
+.upload_append_list ul li{ float:left; padding:25px 10px;}
+.upload_append_list ul li.imgbox{ padding:0; width:90px;}	
+.upload_append_list ul li.imgname{ width:220px;}	
+#form .upload_append_list input[type='text']{ width:150px;}
+</style>	
+
+	<div class="panel panel-default">
+	<div class="panel-heading">
+    <h3 class="panel-title">上传图片</h3>
+  </div>
+		<div class="panel-body">
+			<form class="form-inline" id="uploadForm" action="/uploadimage/ajax-upload?basedir=<?= $this->basedir;?>&dirend=<?=$crumb['dirend']; ?>" method="post" enctype="multipart/form-data">
+				<div class="upload_box">
+					<div class="upload_submit">
+						<input id="fileImage" class="form-control" type="file" size="20" name="fileselect[]" multiple />
+						<input type="button" class="form-control btn-primary" id="fileSubmit" class="upload_submit_btn" value="开始上传" style="display:none" />
+						<input type="button" class="form-control btn-primary" id="cancelButton" class="upload_submit_btn" value="取消上传" style="display:none" />
+						<span id="coverDiv"  style="display:none"><input type="checkbox" id="cover" name="cover">替换已经存在的图片 &nbsp;&nbsp;  <!--  <span class="text-right">一个文件夹下最多50张图片 总大小不超过10MB</span>--></span>
+						<input type="hidden" class="form-control" name="imgroot" id="imgroot" value="<?php echo $this->rootsrc;?>" />
+						<div id="preview" class="upload_preview"></div>
+						
+					</div>
+				</div>
+				<div id="uploadInf" class="upload_inf"></div>
+			</form>	
+		</div>
+	</div>
+</div>
+</div>
+
+<script type="text/javascript">  
+
+function submitForm(){
+	var direndInput = $.trim($("#direndInput").val());
+	if (direndInput){
+		var dirend = "<?=$this->dirend;?>" + "/" + direndInput;
+		var reg = /^[0-9a-zA-Z-_\/]+$/i;
+		var regDouble = /\/{2,}/;
+		if (!reg.test(dirend) || regDouble.test(dirend)){
+			alert("Directory path path can only be [0-9a-zA-Z-_] ");
+			$("#direndInput").focus();
+		}else{
+			window.location.href = "/uploadimage/index?basedir=<?=$this->basedir?>&dirend="+dirend+"&Continue=Continue";
+		}
+	}else{
+		alert("文件夹路径不能为空");
+		$("#direndInput").focus();
+	}
+}
+
+(function($){
+
+	$("#direndInput").keypress(function (e) {
+        if (e.which == 13) {
+           	return false;
+        }
+	});
+	
+	$("a.deleteLink").click(function(){
+		var a = confirm("确定删除吗?");
+		if(!a) {
+			return false;
+		}
+	});
+
+	$("#createDir").click(function(){
+		$("#hiddenForm").toggle();
+		$("#direndInput").focus();
+	});
+
+	$('tr').hover(function(){
+	    $(this).addClass('info');
+	}, function(){
+	    $(this).removeClass('info');
+	}); 
+
+})(jQuery);
+
+
+var params = {
+	fileInput: $("#fileImage").get(0),
+	dragDrop: $("#fileDragArea").get(0),
+	upButton: $("#fileSubmit").get(0),
+	cancelButton : $("#cancelButton").get(0),
+	url: $("#uploadForm").attr("action"),
+	imgroot: $("#imgroot").val(),
+	fileError:[],
+	
+	filter: function(files) {
+		
+		var arrFiles = [];
+		if (files.length > 50){
+			//alert("files num > 50");
+			//return arrFiles;
+		}
+		var allFilesSize = 0;
+		
+		for (var i = 0, file; file = files[i]; i++) {
+			arrFiles.push(file);	
+			allFilesSize += file.size;
+		}
+		
+		if (allFilesSize > 10485760){
+			//arrFiles = [];
+			//alert("file total size > 10M");
+			//this.onCancelUpload();
+		}
+		return arrFiles;
+	},
+
+	displayError:function(){
+		var errorHtml = "";
+		if (this.fileError.length>0){
+			var errorHtml = "<div class=\"alert alert-danger\">";
+			errorHtml +="<button type=\"button\" class=\"close btn-primary\" data-dismiss=\"alert\"><span aria-hidden=\"true\">&times;</span><span class=\"sr-only\">Close</span></button><fieldset><legend>错误</legend><ul>";
+			for(var i = 0, error; error = this.fileError[i];i++){
+				errorHtml += "<li>"+error.error+"</li>";
+			}
+			errorHtml += "</ul></fieldset></div></div>";
+		}
+		return errorHtml;
+	},
+
+	hideUploadBtn:function(){
+		$("#fileSubmit").hide();
+		$("#cancelButton").hide();	
+		$("#coverDiv").hide();
+	},
+	
+	onSelect: function(files) {
+		var html = '', i = 0;
+		$("#preview").html('<div class="upload_loading"></div>');
+		var funAppendImage = function() {
+			file = files[i];
+			if (file) {
+				var reader = new FileReader();
+				reader.onload = function(e) {
+					if (file.type.indexOf("image") == 0){
+						html = html + '<div id="uploadList_'+ i +'" class="upload_append_list"><ul>'+
+						'<li class="imgbox"><img id="uploadImage_' + i + '" src="' + e.target.result + '" class="upload_image" width="80px" height="60px"/></li>'+ 
+						'<li class="imgname"><span class="showTxt">'+file.name+
+						'</span></li><li><form class="form-inline"><input type="text" class="inputtext form-control" size="20" value="'+file.name+
+						'" style="display:none" />&nbsp;&nbsp;<input type="button" class="updateText form-control btn-primary" value="更新" style="display:none" /></form></li><li><input type="button" value="重命名" class="renameBtn form-control btn-primary" /></li><li><input type="button" class="upload_delete form-control btn-primary" value="取消" data-index="'+ i +'" /></li>' +
+						'<li><span id="uploadProgress_' + i + '" class="upload_progress"></span></li>' +
+						'</ul></div>';
+					}else{
+						html = html + '<div id="uploadList_'+ i +'" class="upload_append_list"><ul><li class="imgbox"></li><li class="imgname"><span class="showTxt">'+file.name+
+						'</span></li><li><form class="form-inline"><input type="text" class="inputtext" size="20" value="'+file.name+
+						'" style="display:none" />&nbsp;&nbsp;<input type="button" class="updateText form-control btn-primary" value="更新" style="display:none" /> </form></li><li><input type="button" value="重命名" class="renameBtn form-control btn-primary" /></li><li><input type="button" class="upload_delete form-control btn-primary" value="取消" data-index="'+ i +'" /></li>' +
+						'<li><span id="uploadProgress_' + i + '" class="upload_progress"></span></li>' +
+						'</ul></div>';
+					}
+					i++;
+					funAppendImage();
+				}
+				reader.readAsDataURL(file);
+			} else {
+				$("#preview").html(html);
+				if (html) {
+					//rename action.
+					$("div").delegate(".renameBtn","click",function(){
+						//alert("ddds");
+						var curDiv = $(this).parents("div");
+						curDiv=$("#"+curDiv.attr("id"));
+						curDiv.find(".showTxt").hide();
+						curDiv.find(".inputtext").show();
+						curDiv.find(".updateText").show();
+					});
+					
+					$("div").delegate(".updateText","click",function(){
+						curDiv = $(this).parents("div");
+						curDiv=$("#"+curDiv.attr("id"));
+						curDiv.find(".inputtext").hide();
+						curDiv.find(".updateText").hide();
+						var val = curDiv.find(".inputtext").val();
+						curDiv.find(".showTxt").html(val).show();
+					});
+					
+					//删除方法
+					$(".upload_delete").click(function() {
+						var r = confirm("确定删除吗?");
+						if(r == false){
+							return false;
+						}
+						MMFILE.funDeleteFile(files[parseInt($(this).attr("data-index"))]);
+						return false;	
+					});
+					//提交按钮显示
+					$("#fileSubmit").show();
+					$("#cancelButton").show();	
+					$("#coverDiv").show();
+				} else {
+					//提交按钮隐藏
+					this.hideUploadBtn();
+				}
+			}
+		};
+		funAppendImage();		
+	},
+	onDelete: function(file) {
+		$("#uploadList_" + file.index).fadeOut();
+	},
+	onProgress: function(file, loaded, total) {
+		$("#fileSubmit").hide();
+		var eleProgress = $("#uploadProgress_" + file.index), percent = (loaded / total * 100).toFixed(2) + '%';
+		eleProgress.show().html(percent);
+	},
+	onSuccess: function(file, response) {},
+	onFailure: function(file,response) {
+		this.fileError.push(response);
+	},
+	onComplete: function() {
+		if (this.fileError.length){
+			$("#cancelButton").hide();	
+			$("#coverDiv").hide();
+			var err = this.displayError();
+			$("#errorDiv").html("").html(err);
+			this.fileError = [];
+		}else{
+			window.location.reload();
+		}
+		
+		//file控件value置空
+		$("#fileImage").val("");
+	},
+	onCancelUpload:function(){
+		$("#fileImage").val("");
+		this.hideUploadBtn();
+	},
+	CheckInput: function(){
+		var checkFlag = false;
+		$("#preview").find(".inputtext").each(function(){
+			if (!$(this).is(":hidden")){
+				checkFlag = true;
+				alert("Please complete the file rename operation");
+				return false;
+			}
+		});
+		if (checkFlag){
+			return false;
+		}else{
+			return true;
+		}
+	},
+};
+MMFILE = $.extend(MMFILE, params);
+MMFILE.init();
+</script>

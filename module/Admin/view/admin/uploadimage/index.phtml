@@ -1,0 +1,62 @@
+<?php 
+use Test\Data;
+?>
+<div class="panel panel-default">
+
+	<div class="panel-body">
+
+		<table style="margin-top: 23px"
+			class="table table-striped">
+					
+					<?php
+						foreach ( $this->imagesrc as $image ) :
+						$basedir = str_replace ( "/", "%2F", $image );
+						?>
+						<tr>
+				<td>
+				<?php 
+				$data = Data::getInstance();
+				$site = $data->get('site');
+				$folderUrl = "http://".$site['hostname']."/images/admin/i/folder.gif";
+				?>
+				<img src="<?php echo $folderUrl;?>"> <a
+					href="?basedir=<?=$basedir?>&dirend=&Continue=Continue"><?=$image?></a>
+				</td>
+				<!--  <td style="text-align: center;"><a href="?basedir=<?=$basedir?>&dirend=&Continue=Continue">打开文件夹</a></td>-->
+			</tr>		
+						<?php
+							endforeach;
+						?>
+					
+				</table>
+		 	
+	</div>
+</div>
+
+<script type="text/javascript">
+function submitForm(){
+	var dirend = $.trim($("#direndInput").val());
+	if (dirend){
+		var reg = /^[0-9a-zA-Z-_\/]+$/i;
+		var regDouble = /\/{2,}/;
+		if (!reg.test(dirend) || regDouble.test(dirend)){
+			alert("Directory path can only be [0-9a-zA-Z-_] ");
+			$("#direndInput").focus();
+		}else{
+			$("#direndForm").submit();
+		}
+	}else{
+		alert("文件夹路径不能为空");
+		$("#direndInput").focus();
+	}
+}
+
+(function($){
+	$('tr').hover(function(){
+	    $(this).addClass('info');
+	}, function(){
+	    $(this).removeClass('info');
+	}); 
+
+})(jQuery);
+</script>

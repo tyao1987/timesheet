@@ -1,0 +1,140 @@
+<?php 
+use Admin\Model\Auth;
+use Test\Data;
+$data = Data::getInstance();
+$controller = $data->get('controller');
+?>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <?php echo $this->headMeta()->appendName('viewport', 'width=device-width, initial-scale=1.0'); ?>
+
+    <?php echo $this->headTitle('均瑶科创项目工时管理系统')->setAutoEscape(false) ?>
+
+    <!-- Bootstrap core CSS -->
+    <!-- Custom styles for this template -->
+    <?php echo $this->headLink()->prependStylesheet($this->basePath() . '/styles/admin/dashboard.css')
+                    ->prependStylesheet($this->basePath() . '/styles/admin/bootstrap.min.css')
+                    ->prependStylesheet($this->basePath() . '/styles/admin/signin.css');?>
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <?php echo $this->headscript()->appendFile($this->basepath() . '/scripts/admin/jquery.min.js')
+    	 	   ->appendFile($this->basepath() . '/scripts/admin/jquery.upload.js')
+               ->appendFile($this->basepath() . '/scripts/admin/ie-emulation-modes-warning.js')
+               ->appendFile(
+        	           $this->basepath() . '/scripts/admin/html5shiv.min.js',
+                       'text/javascript',
+                        array('conditional' => 'lt IE 9'))
+               ->appendFile(
+                        $this->basepath() . '/scripts/admin/respond.min.js',
+                        'text/javascript',
+                        array('conditional' => 'lt IE 9'));
+
+    ?>
+    <link rel="shortcut icon" href=/images/favicon.ico type=image/x-icon>
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+        </div>
+        <div class="navbar-collapse collapse">
+          <?php //echo $this->RenderAdminMenu();?>
+          <?php echo $this->CurrentAdminUser();?>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row">
+      	<?php 
+      	   if($controller != 'auth'):
+      	?>
+        <div class='col-sm-3 col-md-2 sidebar'  id='options'>
+        <?php echo $this->RenderOptions();?>
+        </div>
+        <?php 
+            endif;
+        ?>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <?php //echo $this->navigation('navigation')->breadcrumbs()->setPartial('partial/breadcrumbs');?>
+            <?php //echo $this->RenderLinks($breadcrumbs, 'breadcrumb', 'You are here: ', null, '');?>
+            <?php echo $this->RenderAlert();?>
+            <?php echo $this->content;?>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/scripts/admin/bootstrap.min.js"></script>
+    <script src="/scripts/admin/docs.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="/scripts/admin/ie10-viewport-bug-workaround.js"></script>
+  </body>
+<script>
+$('a.add_to_my_bookmarks').click(function(){
+    var label = prompt('Bookmark label:');
+    if(label){
+	    var url = $(this).attr('href');
+	    url += '/label/' + label;
+	    if(jQuery.get(url)){
+	        alert('Your bookmark was successfully saved.');
+	    }
+    }
+    return false;
+});
+
+(function($){
+
+	$(document).on("click",'.checkDeleteUrl',function(){
+		var r = confirm("确定删除吗?");
+		if(r == false){
+			return false;
+		}
+
+	});
+	
+// 	$(function(){
+// 		$(".checkDeleteUrl").bind("click",function (){
+// 			var r = confirm("确定删除吗?");
+// 			if(r == false){
+// 				return false;
+// 			}
+// 		});
+// 	});
+
+	$(function(){
+		$(".downProduct").bind("click",function (){
+			var r = confirm("确定下架吗?");
+			if(r == false){
+				return false;
+			}
+		});
+	});
+	$(function(){
+		$(".unactive").bind("click",function (){
+			var r = confirm("确定禁用吗?");
+			if(r == false){
+				return false;
+			}
+		});
+	});
+	
+})(jQuery);
+
+</script>
+</html>

@@ -1,0 +1,191 @@
+<?php
+use Zend\Form\Element;
+?>
+
+<!--  <h3>User List</h3>-->
+
+<div class="panel panel-default">
+  <div class="panel-body">
+  <a href="/acl/user-add"><span class="glyphicon glyphicon-plus"></span>添加用户</a>
+  </div>
+</div>
+
+<div class="panel panel-default">
+
+      <div class="panel-body">
+        <form name="search" class="form-inline" style="display:inline-block" role="form" action="/acl/user-list" method="get">
+       
+          <div class="form-group">
+            <input value="<?php echo $this->param['name'];?>" type="text" name="name" class="form-control" id="name" placeholder="用户名">
+          </div>
+          
+          <div class="form-group">
+            <input value="<?php echo $this->param['real_name'];?>" type="text" name="real_name" class="form-control" id="name" placeholder="真实姓名">
+          </div>
+          
+       
+          <button type="submit" class="btn btn-primary">搜索</button>
+          
+          </form>
+          
+          <!--  <div style="display: inline-block;margin-left:10px;">
+			<input name="start_date" id="start_date" max="" style="height: 35px;display: inline-block;floar:left;height: 34px;color: #555;background-color: #fff;background-image: none;border: 1px solid #ccc;border-radius: 4px;" >
+          ~
+          <input name="end_date" id="end_date" max="" style="height: 35px;display: inline-block;floar:left;height: 34px;color: #555;background-color: #fff;background-image: none;border: 1px solid #ccc;border-radius: 4px;">
+        
+          <button type="submit" class="btn btn-primary" id="exportExcel">导出</button>
+     	</div>-->
+          
+          </div>
+
+  <div class="panel-body">
+	<table class="table table-striped">
+			<tr>
+				<th>用户名</th>
+				<th>真实姓名</th>
+				<th>部门</th>
+				<th>职位</th>
+				<th>地区</th>
+<!-- 				<th>创建时间</th> -->
+				<th>状态</th>
+				<th>操作</th>
+			</tr> 
+			 <?php foreach ($this->paginator as $user){ ?>
+			<tr>
+			    <td> <?php echo $this->escapehtml($user['name']); ?>  </td>
+			    <td> <?php echo $this->escapehtml($user['real_name']); ?> </td>
+			    <td> <?php echo $this->escapehtml($this->GetDepartmentById($user['department_id'])['name']); ?> </td>
+			    <td> <?php echo $this->escapehtml($this->GetJobById($user['job_id'])['name']); ?> </td>
+			    <td> <?php echo $this->escapehtml($this->GetAreaById($user['area_id'])['name']); ?> </td>
+			  <!--    <td> <?php echo $this->escapehtml(date("Y-m-d",strtotime($user['create_time']))); ?> </td>-->
+			    <td>
+			    	<?php 
+			    	    if($user['is_active'] == 1):
+			    	        echo "启用";
+			    	    else:
+			    	        echo "禁用";
+			    	    endif;
+			    	?>
+			    </td> 
+			   
+			    <td>
+			    <?php 
+			         if($user['id'] != 1):
+			    ?>	
+			    <a <?php if($user['is_active'] == 1){ echo "class=\"unactive\"";}?> href="<?php echo $this->url("default",array(
+			    		"controller"=>"acl",
+			    		"action" => "user-active",
+			    		"id" => $user['id']
+			    )); ?>">
+			    <?php 
+			    	    if($user['is_active'] == 1):
+			    	        echo "禁用";
+			    	    else:
+			    	        echo "启用";
+			    	    endif;
+			    	?>
+			    </a>&nbsp;&nbsp;
+			    <?php 
+			         endif;
+			    ?>
+			    <a href="<?php echo $this->url("default",array(
+			    		"controller"=>"acl",
+			    		"action" => "user-manage",
+			    		"id" => $user['id']
+			    )); ?>">编辑</a>&nbsp;&nbsp;
+	<!--  		    
+			    <?php 
+			         if($user['id'] != 1 && $user['is_delete'] == 0):
+			    ?>			    
+			    <a class="checkDeleteUrl" href="<?php echo $this->url("default",array(
+			    		"controller"=>"acl",
+			    		"action" => "user-delete",
+			    		"id" => $user['id']
+			    )); ?>">删除</a>&nbsp;&nbsp;
+			    <?php 
+			         endif;
+			    ?>
+			    
+			    <?php 
+			         if($user['id'] != 1 && $user['is_delete'] == 1):
+			    ?>			    
+			    <a href="<?php echo $this->url("default",array(
+			    		"controller"=>"acl",
+			    		"action" => "user-reactive",
+			    		"id" => $user['id']
+			    )); ?>">取消删除</a>&nbsp;&nbsp;
+			    <?php 
+			         endif;
+			    ?>
+			    -->
+			    </td>
+			    
+			</tr>
+			<?php } ?>
+	</table>
+	
+	<?php
+        
+	 	// add at the end of the file after the table
+	 	try {
+			echo $this->paginationControl(
+			    // the paginator object
+			    $this->paginator,
+			    'sliding',
+			    // the partial to use to render the control
+			    array('partial/paginator.phtml', 'Admin'),
+			    // the route to link to when a user clicks a control link
+			    array("route"=>'default','route_params'=>array('controller'=>'acl','action'=>'user-list'))
+			);
+		}catch (\Exception $e){
+			echo $e->getMessage();
+		}
+	
+	?>
+</div>
+</div>
+
+<script type="text/javascript">
+	$("#exportExcel").click(function(){
+		var startDate = $("#start_date").val();
+		var endDate = $("#end_date").val();
+		if(startDate !='' && endDate !='' ){
+			$(this).attr("disabled",true);
+			$.ajax({
+				url:'/acl/export',
+				type:'POST',
+				dataType:'json',
+				data:{start_date:startDate, end_date:endDate},
+				success:function(result){
+					if(result.code == 1){
+						window.location.href="/export/"+result.name;
+		 				return false;
+					}
+					if(result.code == 2){
+						alert("没有数据");
+					}
+				},
+				complete: function() {
+					$("#exportExcel").attr("disabled",false);
+				}
+			});
+		}else{
+			alert("时间不能为空");
+		};
+	});
+</script>
+
+<?php 
+$today = date('Y-m-d');	
+?>
+<script type="text/javascript" src="/scripts/admin/laydate/laydate.js">	
+</script>
+<script type="text/javascript">
+laydate.render({
+elem: '#start_date',max: '<?php echo $today;?>'
+});
+
+laydate.render({
+  elem: '#end_date',max: '<?php echo $today;?>'
+});
+</script>

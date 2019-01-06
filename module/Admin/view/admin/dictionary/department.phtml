@@ -1,0 +1,92 @@
+<?php 
+    $currentController = 'dictionary';
+?>
+<div class="panel panel-default">
+ 
+
+  <div class="panel-body">
+  <input type="text" maxlength="30" id="name"/><button id="addName">新增</button>
+	<table id="obj_table" class="table table-striped">
+			<tr>
+				<th>部门名称</th>
+				<th>操作</th>
+			</tr> 
+			 <?php foreach ($this->paginator as $row){ ?>
+			<tr>
+			    <td><?php echo $this->escapehtml($row['name']); ?></td>
+			    <td><a class="removeName" remove_id="<?php echo $row['id'];?>" style="cursor:pointer" href="">删除</a></td>
+			</tr>
+			<?php } ?>
+	</table>
+	
+</div>
+</div>
+<script>
+
+$(document).on("click",'.removeName',function(e){
+	var r = confirm("确定删除吗?");
+	if(r == false){
+		return false;
+	}
+	e.stopPropagation();
+	var id = $(this).attr('remove_id');
+	var trlink = $(this).parents("tr");
+	$.ajax({
+    	url: "/dictionary/deleteDepartment",
+    	type: "POST",
+    	dataType: "json",
+    	data: { id: id },
+    	success: function(result) {
+			if(result.code == 0){
+				trlink.remove();
+			}
+			if(result.code == -1){
+				alert('删除失败 关联用户已存在');
+			}
+			if(result.code == -2){
+				alert('删除失败');
+			}
+    	}
+	});
+	return false;
+});
+
+(function($){
+	$("#addName").click(function(e){
+		var name = $.trim($("#name").val());
+		if(name != ''){
+			$(this).attr("disabled",true);
+			$.ajax({
+				url: "/dictionary/addDepartment",
+				type: "POST",
+				dataType: "json",
+				data: { name: name },
+				success: function(result) {
+					var data = result.data;
+					if(data.code == -2){
+						alert('名称不能重复');
+					}
+					if(data.code == -1){
+						alert('参数错误');
+					}
+					
+					if(data.name != '' && data.id > 0){
+						var rowTem = '<tr>'
+			                + '<td>'+data.name+'</td>'
+			                + '<td><a class="removeName" style="cursor:pointer"  href="" remove_id='+data.id+'>删除</a></td>'
+			                + '</tr>';
+						$("#obj_table tbody:last").append(rowTem);
+						$("#name").val('');
+					}
+					
+				},
+				complete: function() {
+					$("#addName").attr("disabled",false);
+				}
+			});
+		}
+	});
+
+})(jQuery);
+
+</script>

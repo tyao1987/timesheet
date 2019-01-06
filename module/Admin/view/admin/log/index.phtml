@@ -1,0 +1,92 @@
+<?php
+use Zend\Form\Element;
+?>
+
+
+<h3>操作日志</h3>
+
+
+<div class="panel panel-default">
+  
+  <div id="collapseOne" class="" role="tabpanel">
+  <div class="panel-body">
+<form class="form-inline" role="form">
+  <div class="form-group">
+    <label for="inputId" class="control-label">用户:</label>
+    
+    	<?php 
+    	   
+    		$element = new Element\Select("user_id");
+    		
+    		$element->setValueOptions( 
+					$this->users
+    		);
+    		$element->setAttributes(array(
+    				'class'=>'form-control'
+    		));
+			if($this->user_id){
+				$element->setValue($this->user_id);
+			}
+			echo $this->formselect($element);
+    	?>
+    	<button type="submit" class="btn btn-primary">搜索</button>&nbsp;&nbsp;
+  </div>
+</form>
+</div>
+  </div>
+</div>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+	<table  class="table table-striped">
+			<tr>
+				<th>id</th>
+				<th>用户名</th>
+				<th>操作行为</th>
+				<th>ip</th>
+				<th>时间</th>
+			</tr> 
+			 <?php foreach ($this->paginator as $log){ ?>
+			<tr>
+			    <td> <?php echo $this->escapehtml($log['id']); ?>  </td>
+			    <td> <?php echo $this->escapehtml($log['user_name']); ?> </td>
+			    <td> 
+			    <?php echo $this->escapehtml($log['title']); ?>
+			    <?php 
+			         //if($log['description']):
+			    ?>
+			    <a target="_blank" href="<?php echo $this->url("default",array(
+			    		"controller"=>"log",
+			    		"action" => "log-info",
+			            "id" => $log['id']
+			         )); ?>">查看详情</a>
+			    <?php
+			         //endif;
+			    ?>
+			    </td>
+			    <td> <?php echo $this->escapehtml($log['ip']); ?> </td>
+			    <td> <?php echo $this->escapehtml($log['date']); ?> </td>
+			</tr>
+			<?php } ?>
+	</table>
+	
+	<?php
+        
+	 	// add at the end of the file after the table
+	 	try {
+			echo $this->paginationControl(
+			    // the paginator object
+			    $this->paginator,
+			    'sliding',
+			    // the partial to use to render the control
+			    array('partial/paginator.phtml', 'Admin'),
+			    // the route to link to when a user clicks a control link
+			    array("route"=>'default','route_params'=>array('controller'=>'log','action'=>'index'))
+			);
+		}catch (\Exception $e){
+			echo $e->getMessage();
+		}
+	
+	?>
+</div>
+</div>

@@ -1,0 +1,74 @@
+<?php
+use Zend\Form\Element;
+?>
+
+
+
+<h3>角色列表</h3>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+  <a href="/acl/role-edit"><span class="glyphicon glyphicon-plus"></span>添加角色</a>
+  </div>
+</div>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+	<table  class="table table-striped">
+			<tr>
+				<th>ID</th>
+				<th>名称</th>
+				<th>描述</th>
+				<th>操作</th>
+			</tr> 
+			 <?php foreach ($this->paginator as $role){ ?>
+			<tr>
+			    <td> <?php echo $this->escapehtml($role['id']); ?>  </td>
+			    <td> <?php echo $this->escapehtml($role['name']); ?> </td>
+			    <td> <?php echo $this->escapehtml($role['description']); ?> </td>
+			    <td> 
+			    <a href="<?php echo $this->url("default",array(
+			    		"controller"=>"acl",
+			    		"action" => "role-edit",
+			    		"id" => $role['id']
+			    )); ?>">编辑</a>&nbsp;&nbsp;
+			    
+			    <a class="checkDeleteUrl" href="<?php echo $this->url("default",array(
+			    		"controller"=>"acl",
+			    		"action" => "role-delete",
+			    		"id" => $role['id']
+			    )); ?>">删除</a>&nbsp;&nbsp;
+			    
+			    <a href="<?php echo $this->url("default",array(
+			    		"controller"=>"acl",
+			    		"action" => "role-manage",
+			    		"id" => $role['id']
+			    )); ?>">配置权限</a>&nbsp;&nbsp;
+			    
+			    </td>
+			    
+			</tr>
+			<?php } ?>
+	</table>
+	
+	<?php
+        
+	 	// add at the end of the file after the table
+	 	try {
+			echo $this->paginationControl(
+			    // the paginator object
+			    $this->paginator,
+			    'sliding',
+			    // the partial to use to render the control
+			    array('partial/paginator.phtml', 'Admin'),
+			    // the route to link to when a user clicks a control link
+			    array("route"=>'default','route_params'=>array('controller'=>'acl','action'=>'role-list'))
+			);
+		}catch (\Exception $e){
+			echo $e->getMessage();
+		}
+	
+	?>
+</div>
+</div>
+

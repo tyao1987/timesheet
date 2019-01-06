@@ -1,0 +1,241 @@
+<?php 
+    $currentController = 'work';
+    $listUrl = $this->url("default",array(
+        "controller"=>$currentController,
+        "action" => "list"
+    ));
+    //项目名称
+    $productStr = $this->GetProductSelect();
+    //非项目分类
+    $noProductTypeStr = $this->GetTypeSelect();
+    //项目分类
+    $productTypeStr = $this->GetTypeSelect(false);
+?>
+<div class="panel panel-default">
+<div class="panel-body">
+<?php 
+    $today = date('Y-m-d');
+?>
+        <form name="search" class="form-inline" role="form" action="/work/list" method="get">
+          <div class="form-group">
+          <input name="start_date" placeholder="请选择日期" id="start_date" class="form-control" max="<?php echo $today;?>" style="height: 45px;"  value="<?php echo $this->startDate;?>">
+          ~
+          <input name="end_date" placeholder="请选择日期" id="end_date" class="form-control" max="<?php echo $today;?>" style="height: 45px;"  value="<?php echo $this->endDate;?>">
+          </div>
+          <button type="submit" class="btn btn-primary">搜索</button>
+          </form>
+          </div>
+<input type="hidden" id="productSelect" value="<?php echo $this->escapehtml($productStr)?>">
+<input type="hidden" id="noProductTypeSelect" value="<?php echo $this->escapehtml($noProductTypeStr)?>">
+<input type="hidden" id="productTypeSelect" value="<?php echo $this->escapehtml($productTypeStr)?>">
+  <div class="panel-body">
+	<table id="obj_table" class="table table-striped">
+			<tr class="workTr">
+			    <td><input class="workDate" placeholder="请选择日期" max="<?php echo $today;?>" style="height: 30px; width:100px;"></td>
+			    <td class="productTd"><?php echo $productStr?></td>
+			    <td class="typeTd"><select style="height: 30px;"><option value="0">未选择</option></select></td>
+			    <td><input class="timeText" type="text" onkeyup="num(this)" style="width: 35px;height: 30px;"></td>
+			    <td><button>保存</button></td>
+			</tr>
+			<tr class='titleTr'>
+				<th width="20%">日期</th>
+				<th width="20%">归属项目</th>
+				<th width="20%">分类</th>
+				<th width="20%">工时(小时)</th>
+				<th width="20%">操作</th>
+			</tr>
+			 <?php foreach ($this->paginator as $row){ ?>
+			<tr>
+			    <td><?php echo $this->escapehtml($row['work_date']); ?></td>
+			    <td><?php echo $this->escapehtml($this->GetProductById($row['project_id'])['name']); ?></td>
+			    <td><?php echo $this->escapehtml($this->GetTypeById($row['type_id'])['name']); ?></td>
+			    <td><?php echo $this->escapehtml($row['work_time']); ?></td>
+			    <td><a class="removeName" remove_id="<?php echo $row['id'];?>" style="cursor:pointer" href="">删除</a></td>
+			</tr>
+			<?php } ?>
+			
+	</table>
+	<?php
+        
+	 	// add at the end of the file after the table
+	 	try {
+			echo $this->paginationControl(
+			    // the paginator object
+			    $this->paginator,
+			    'sliding',
+			    // the partial to use to render the control
+			    array('partial/paginator.phtml', 'Admin'),
+			    // the route to link to when a user clicks a control link
+			    array("route"=>'default','route_params'=>array('controller'=>$currentController,'action'=>'list'))
+			);
+		}catch (\Exception $e){
+			echo $e->getMessage();
+		}
+	
+	?>
+</div>
+</div>
+<script>
+
+$(document).on("click",'.workTr button',function(e){
+	var date = $(this).parent().parent().find(".workDate").val();
+	var productId = $(this).parent().parent().find(".productTd select").val();
+	var productName = $(this).parent().parent().find(".productTd select").find("option:selected").text();
+	var typeTd = $(this).parent().parent().find(".typeTd select").val();
+	var typeName = $(this).parent().parent().find(".typeTd select").find("option:selected").text();
+	var time = $(this).parent().parent().find(".timeText").val();
+	if(time > 0){
+		
+	}else{
+		alert('请填写工时');
+		return false;
+	}
+	
+	var button = $(this);
+	if(date == ''){
+		alert('请选择日期');
+	}else if(productId == 0){
+		alert('请选择项目');
+	}else if($.trim(time) == ''){
+		alert('请填写工时');
+	}else{
+		$(this).attr("disabled",true);
+		$.ajax({
+				url: "/work/add",
+				type: "POST",
+				dataType: "json",
+				data: { date: date, productId: productId,typeTd:typeTd,time:time },
+				success: function(result) {
+					if(result.code == 0){
+						alert('保存成功');
+						$(".timeText").val('');
+						var str = "<tr><td>"+date+"</td>";
+						str += "<td>"+productName+"</td>";
+						str += "<td>"+typeName+"</td>";
+						str += "<td>"+time+"</td>"
+						str += "<td><a class=\"removeName\" remove_id=\""+result.id+"\" style=\"cursor:pointer\" href=\"\">删除</a></td></tr>";
+						$('.titleTr').after(str);
+					}
+					if(result.code == -1){
+						alert('参数错误');
+					}
+					if(result.code == -2){
+						alert('项目或分类不存在');
+						window.location.reload();
+					}
+					if(result.code == -3){
+						alert('当天的工时累加已超过24小时,请检查');
+					}
+				},
+				complete: function() {
+					$(button).attr("disabled",false);
+				}
+		});
+		
+	}
+});
+
+function num(obj){
+	obj.value = obj.value.replace(/[^\d.]/g,""); //清除"数字"和"."以外的字符
+	obj.value = obj.value.replace(/^\./g,""); //验证第一个字符是数字
+	obj.value = obj.value.replace(/\.{2,}/g,"."); //只保留第一个, 清除多余的
+	obj.value = obj.value.replace(".","$#$").replace(/\./g,"").replace("$#$",".");
+	obj.value = obj.value.replace(/^(\-)*(\d+)\.(\d).*$/,'$1$2.$3'); //只能输入两个小数
+	}
+
+$(document).on("click",'.removeName',function(e){
+	var r = confirm("确定删除吗?");
+	if(r == false){
+		return false;
+	}
+	e.stopPropagation();
+	var id = $(this).attr('remove_id');
+	var trlink = $(this).parents("tr");
+	$.ajax({
+    	url: "/work/delete",
+    	type: "POST",
+    	dataType: "json",
+    	data: { id: id },
+    	success: function(result) {
+			if(result.code == 0){
+				trlink.remove();
+			}
+			if(result.code == -2){
+				alert('删除失败');
+			}
+    	}
+	});
+	return false;
+});
+
+(function($){
+
+	$(".productTd select").change(function(e){
+		var productValue = $(this).val();
+		if(productValue == 0){
+			$(".typeTd select").html("<option value='0'>未选择</option>");
+		}else if(productValue == 1){
+			$(".typeTd select").html($("#noProductTypeSelect").val());
+		}else{
+			$(".typeTd select").html($("#productTypeSelect").val());
+		}
+	});
+	
+	
+	
+	$("#addName").click(function(e){
+		var name = $.trim($("#name").val());
+		if(name != ''){
+			$(this).attr("disabled",true);
+			$.ajax({
+				url: "/dictionary/addArea",
+				type: "POST",
+				dataType: "json",
+				data: { name: name },
+				success: function(result) {
+					var data = result.data;
+					if(data.code == -2){
+						alert('名称不能重复');
+					}
+					if(data.code == -1){
+						alert('参数错误');
+					}
+					
+					if(data.name != '' && data.id > 0){
+						var rowTem = '<tr>'
+			                + '<td>'+data.name+'</td>'
+			                + '<td><a class="removeName" style="cursor:pointer"  href="" remove_id='+data.id+'>删除</a></td>'
+			                + '</tr>';
+						$("#obj_table tbody:last").append(rowTem);
+					}
+					
+				},
+				complete: function() {
+					$("#addName").attr("disabled",false);
+				}
+			});
+		}
+	});
+
+})(jQuery);
+
+</script>
+
+<script type="text/javascript" src="/scripts/admin/laydate/laydate.js">
+</script>
+<script>
+//执行一个laydate实例
+laydate.render({
+elem: '#start_date' //指定元素
+,max: '<?php echo $today;?>'
+});
+laydate.render({
+elem: '#end_date' //指定元素
+//,max: '<?php //echo $today;?>'
+});
+laydate.render({
+elem: '.workDate' //指定元素
+//,max: '<?php //echo $today;?>'
+});
+
+</script>
